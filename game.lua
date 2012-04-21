@@ -84,11 +84,9 @@ function game.tic()
     
     if not inTheAir then
         if input.up then
-            print("jumping")
             vy = vy + 3.8
         end
         if input.down and playerLevel < levels then
-            print("falling")
             vy = vy - 2
         end
         if vy < 0 then
