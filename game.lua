@@ -14,9 +14,13 @@ local dimensions = {}
 local tiles = {}
 
 local playerLevel = 0
-local playerAlt = radius
 local playerPos = 0
 local playerSpeed = 2
+
+local playerAlt = radius
+local vy = 0
+local gravity = -0.1
+local inTheAir = false
 
 function game.init()
     -- level 0: atmosphere
@@ -54,7 +58,7 @@ function game.init()
     end
 
     -- generate tiles
-    for level = 1, levels do
+    for level = 0, levels do
         tiles[level] = {}
         local count = dimensions[level].count
         for tile = 0, count - 1 do
@@ -65,6 +69,8 @@ function game.init()
     -- initial player position
     playerPos = 0
     playerAlt = dimensions[0].innerRadius
+    inTheAir = false
+    vy = 0
 end
 
 function game.tic()
@@ -73,13 +79,44 @@ function game.tic()
     function changeLevel(level)
         local oldLen = dimensions[playerLevel].length
         playerLevel = level
-        playerAlt = dimensions[playerLevel].innerRadius
         playerPos = (playerPos / oldLen) * dimensions[playerLevel].length
     end
+    
+    if not inTheAir then
+        if input.up then
+            print("jumping")
+            vy = vy + 3.8
+        end
+        if input.down and playerLevel < levels then
+            print("falling")
+            vy = vy - 2
+        end
+        if vy < 0 then
+            changeLevel(playerLevel + 1)
+        end
+        if vy ~= 0 then
+            inTheAir = true
+        end
+    end
 
-    local newLevel = playerLevel + input.consumeAll('down') - input.consumeAll('up')
-    if newLevel >= 0 and newLevel <= levels then
-        changeLevel(newLevel)
+    if inTheAir then
+        local floor = dimensions[playerLevel].innerRadius
+        local ceiling = dimensions[playerLevel].outerRadius
+        vy = vy + gravity
+        playerAlt = playerAlt + vy
+        if vy > 0 then
+            -- jumping
+            if playerAlt > ceiling and playerLevel > 0 then
+                changeLevel(playerLevel - 1)
+            end
+        else
+            -- falling
+            if playerAlt < floor then
+                playerAlt = floor
+                vy = 0
+                inTheAir = false
+            end
+        end
     end
 
     if input.left then
@@ -130,15 +167,8 @@ function renderPlanet()
         for i = 0, count-1 do
             local restore = false
 
---            if playerLevel == level and pt == i then
-            if pt == i then
-                restore = true
-                love.graphics.setColor(255,0,0)
-            end
-
             love.graphics.quad('line', r-th, -tw/2, r,    -tw/2,
                                        r,     tw/2, r-th,  tw/2)
-            love.graphics.print(i, r-th/2, 0)
 
             if restore then
                 love.graphics.setColor(255,255,255)

@@ -34,9 +34,9 @@ function input.consumeOne(key)
     local count = input.counts[key]
     if count > 0 then
         input.counts[key] = count - 1
-        return 1
+        return true
     else
-        return 0
+        return false
     end
 end
 
