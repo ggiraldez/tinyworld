@@ -19,10 +19,20 @@ local playerSpeed = 2
 
 local playerAlt = radius
 local vy = 0
-local gravity = -0.1
+local gravity = -0.2
 local inTheAir = false
 
+local textures = {}
+local quads = {}
+
 function game.init()
+    local img = love.graphics.newImage('images/tiles.png')
+    textures.tiles = img
+    quads[1] = {}
+    quads[1][0] = love.graphics.newQuad(0, 0, 32, 32, img:getWidth(), img:getHeight())
+    quads[1][1] = love.graphics.newQuad(32, 0, 32, 32, img:getWidth(), img:getHeight())
+    quads[1][2] = love.graphics.newQuad(64, 0, 32, 32, img:getWidth(), img:getHeight())
+
     -- level 0: atmosphere
     -- level 1: cortex
     -- level 2+: deeper levels
@@ -62,7 +72,7 @@ function game.init()
         tiles[level] = {}
         local count = dimensions[level].count
         for tile = 0, count - 1 do
-            tiles[level][tile] = 0
+            tiles[level][tile] = math.random(0, 2)
         end
     end
 
@@ -84,7 +94,7 @@ function game.tic()
     
     if not inTheAir then
         if input.up then
-            vy = vy + 3.8
+            vy = vy + 5.5
         end
         if input.down and playerLevel < levels then
             vy = vy - 2
@@ -149,7 +159,7 @@ function renderPlanet()
     love.graphics.push()
     love.graphics.translate(centerX, centerY)
     local worldAngle = 2*math.pi * playerPos / dimensions[playerLevel].length
-    love.graphics.rotate(-math.pi/2 + worldAngle)
+    love.graphics.rotate(worldAngle)
 
     function drawtiles(level)
         local sizes = dimensions[level]
@@ -165,8 +175,13 @@ function renderPlanet()
         for i = 0, count-1 do
             local restore = false
 
-            love.graphics.quad('line', r-th, -tw/2, r,    -tw/2,
-                                       r,     tw/2, r-th,  tw/2)
+            if level == 1 then
+                love.graphics.drawq(textures.tiles, quads[1][tiles[level][i]],
+                                    math.ceil(-tw/2), -r, 0, 2, 2)
+            else
+                love.graphics.quad('line', -tw/2, -r,     tw/2, -r,
+                                            tw/2, -r+th, -tw/2, -r+th)
+            end
 
             if restore then
                 love.graphics.setColor(255,255,255)
