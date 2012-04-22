@@ -29,6 +29,11 @@ local quads = {}
 
 local starField = {}
 
+
+---------------------------------------------------------------------------------
+-- Initialization code
+---------------------------------------------------------------------------------
+
 function loadTextures()
     local w, h
 
@@ -53,8 +58,8 @@ function loadTextures()
 
     -- stars
     textures.stars = love.graphics.newImage('images/stars.png')
-    w = textures.tiles:getWidth()
-    h = textures.tiles:getHeight()
+    w = textures.stars:getWidth()
+    h = textures.stars:getHeight()
 
     -- stars' quads
     quads.stars = {}
@@ -66,8 +71,6 @@ function loadTextures()
     -- planet core
     textures.core = love.graphics.newImage('images/core.png')
 end
-
-
 
 function game.init()
     loadTextures()
@@ -85,11 +88,12 @@ function game.init()
     end
 
     -- level 0: atmosphere
-    -- level 1: cortex
-    -- level 2+: deeper levels
-    -- base dimensions (cortex tiles are 64x64)
-    -- r1: cortex outer radius is the planet radius
-    -- c1: tile count at the cortex
+    -- level 1: outer cortex
+    -- level 2: mid cortex
+    -- level 3: inner cortex
+    -- base dimensions (outer cortex tiles are 64x64)
+    -- r1: outer cortex outer radius is the planet radius
+    -- c1: tile count at the outer cortex
     local th = 64
     local tw = 64
     local r1 = radius
@@ -130,13 +134,31 @@ function game.init()
     -- initial player position
     playerAngle = 0
     playerAlt = dimensions[0].innerRadius
+    playerLevel = 0
     inTheAir = false
     vy = 0
 end
 
+
+----------------------------------------------------------------------------------
+-- Auxiliary functions
+----------------------------------------------------------------------------------
+
+function playerTile()
+    local dims = dimensions[playerLevel]
+    local tileArc = 2*math.pi / dims.count
+    return math.floor((playerAngle + tileArc/2) / tileArc) % dims.count
+end
+
+
+----------------------------------------------------------------------------------
+-- Game logic
+----------------------------------------------------------------------------------
+
 function game.tic()
     input.tic()
 
+    -- vertical controls
     if not inTheAir then
         if input.up then
             vy = vy + 5.5
@@ -152,6 +174,7 @@ function game.tic()
         end
     end
 
+    -- update player altitude
     if inTheAir then
         local floor = dimensions[playerLevel].innerRadius
         local ceiling = dimensions[playerLevel].outerRadius
@@ -172,6 +195,7 @@ function game.tic()
         end
     end
 
+    -- horizontal controls
     local vx = 0
     if input.left then
         vx = vx + playerSpeed
@@ -186,18 +210,17 @@ function game.tic()
     end
 end
 
+
+---------------------------------------------------------------------------------
+-- Render code
+---------------------------------------------------------------------------------
+
 function renderPlayer()
     -- player
     local x = centerX
     local y = centerY - playerAlt 
     love.graphics.quad('fill', x - pw/2, y - ph, x + pw/2, y - ph,
                                x + pw/2, y,      x - pw/2, y)
-end
-
-function playerTile()
-    local dims = dimensions[playerLevel]
-    local tileArc = 2*math.pi / dims.count
-    return math.floor((playerAngle + tileArc/2) / tileArc) % dims.count
 end
 
 function renderPlanet()
@@ -251,6 +274,7 @@ function game.render()
     renderPlanet()
     renderPlayer()
 end
+
 
 return game
 
