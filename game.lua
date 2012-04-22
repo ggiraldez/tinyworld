@@ -2,55 +2,75 @@ local game = {}
 
 local input = require('input')
 
+-- player state
 local ph = 32
 local pw = 32
+local playerAlt
+local inTheAir
+local playerLevel
+local playerAngle = 0
+local playerSpeed = 2
+local vy = 0
+
+-- geometry vars
 local atmosphere = 3 * ph
 local radius = love.graphics.getWidth() / 2 - atmosphere
 local centerX = love.graphics.getWidth() / 2
 local centerY = radius + atmosphere + ph
+local gravity = -0.2
 
+-- planet tiles
 local levels = 3
 local dimensions = {}
 local tiles = {}
-
-local playerLevel = 0
-local playerAngle = 0
-local playerSpeed = 2
-
-local playerAlt = radius
-local vy = 0
-local gravity = -0.2
-local inTheAir = false
 
 local textures = {}
 local quads = {}
 
 local starField = {}
 
-function game.init()
-    -- load textures
-    local img = love.graphics.newImage('images/tiles.png')
-    textures.tiles = img
+function loadTextures()
+    local w, h
+
+    -- load tiles
+    textures.tiles = love.graphics.newImage('images/tiles.png')
+    w = textures.tiles:getWidth()
+    h = textures.tiles:getHeight()
+
+    -- quads for the tiles
     quads[1] = {}
     quads[2] = {}
     quads[3] = {}
-    quads[1][0] = love.graphics.newQuad(0,  0, 32, 32, img:getWidth(), img:getHeight())
-    quads[1][1] = love.graphics.newQuad(32, 0, 32, 32, img:getWidth(), img:getHeight())
-    quads[1][2] = love.graphics.newQuad(64, 0, 32, 32, img:getWidth(), img:getHeight())
-    quads[2][0] = love.graphics.newQuad(0,  64, 27, 32, img:getWidth(), img:getHeight())
-    quads[2][1] = love.graphics.newQuad(27, 64, 27, 32, img:getWidth(), img:getHeight())
-    quads[2][2] = love.graphics.newQuad(54, 64, 27, 32, img:getWidth(), img:getHeight())
-    quads[3][0] = love.graphics.newQuad(0,  128, 22, 32, img:getWidth(), img:getHeight())
-    quads[3][1] = love.graphics.newQuad(22, 128, 22, 32, img:getWidth(), img:getHeight())
-    quads[3][2] = love.graphics.newQuad(44, 128, 22, 32, img:getWidth(), img:getHeight())
-    textures.core = love.graphics.newImage('images/core.png')
+    quads[1][0] = love.graphics.newQuad(0,  0, 32, 32,   w, h)
+    quads[1][1] = love.graphics.newQuad(32, 0, 32, 32,   w, h)
+    quads[1][2] = love.graphics.newQuad(64, 0, 32, 32,   w, h)
+    quads[2][0] = love.graphics.newQuad(0,  64, 27, 32,  w, h)
+    quads[2][1] = love.graphics.newQuad(27, 64, 27, 32,  w, h)
+    quads[2][2] = love.graphics.newQuad(54, 64, 27, 32,  w, h)
+    quads[3][0] = love.graphics.newQuad(0,  128, 22, 32, w, h)
+    quads[3][1] = love.graphics.newQuad(22, 128, 22, 32, w, h)
+    quads[3][2] = love.graphics.newQuad(44, 128, 22, 32, w, h)
+
+    -- stars
     textures.stars = love.graphics.newImage('images/stars.png')
-    img = textures.stars
+    w = textures.tiles:getWidth()
+    h = textures.tiles:getHeight()
+
+    -- stars' quads
     quads.stars = {}
-    quads.stars[0] = love.graphics.newQuad(0, 0, 16, 16, img:getWidth(), img:getHeight())
-    quads.stars[1] = love.graphics.newQuad(16, 0, 16, 16, img:getWidth(), img:getHeight())
-    quads.stars[2] = love.graphics.newQuad(32, 0, 16, 16, img:getWidth(), img:getHeight())
-    quads.stars[3] = love.graphics.newQuad(48, 0, 16, 16, img:getWidth(), img:getHeight())
+    quads.stars[0] = love.graphics.newQuad(0,  0, 16, 16, w, h)
+    quads.stars[1] = love.graphics.newQuad(16, 0, 16, 16, w, h)
+    quads.stars[2] = love.graphics.newQuad(32, 0, 16, 16, w, h)
+    quads.stars[3] = love.graphics.newQuad(48, 0, 16, 16, w, h)
+
+    -- planet core
+    textures.core = love.graphics.newImage('images/core.png')
+end
+
+
+
+function game.init()
+    loadTextures()
 
     -- initialize starfield
     local span = math.max(centerX, centerY) * 1.3
