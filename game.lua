@@ -9,8 +9,10 @@ local playerAlt
 local inTheAir
 local playerLevel
 local playerAngle = 0
-local playerSpeed = 2
+local maxSpeed = 2
+local accel = .2
 local vy = 0
+local vx = 0
 
 -- geometry vars
 local atmosphere = 3 * ph
@@ -39,19 +41,23 @@ function loadTextures()
 
     -- load tiles
     textures.tiles = love.graphics.newImage('images/tiles.png')
+    textures.tiles:setFilter('linear', 'nearest')
     w = textures.tiles:getWidth()
     h = textures.tiles:getHeight()
 
     -- quads for the tiles
     quads[1] = {}
-    quads[2] = {}
-    quads[3] = {}
     quads[1][0] = love.graphics.newQuad(0,  0, 32, 32,   w, h)
     quads[1][1] = love.graphics.newQuad(32, 0, 32, 32,   w, h)
     quads[1][2] = love.graphics.newQuad(64, 0, 32, 32,   w, h)
+    quads[1][3] = love.graphics.newQuad(96, 0, 32, 32,   w, h)
+
+    quads[2] = {}
     quads[2][0] = love.graphics.newQuad(0,  64, 27, 32,  w, h)
     quads[2][1] = love.graphics.newQuad(27, 64, 27, 32,  w, h)
     quads[2][2] = love.graphics.newQuad(54, 64, 27, 32,  w, h)
+
+    quads[3] = {}
     quads[3][0] = love.graphics.newQuad(0,  128, 22, 32, w, h)
     quads[3][1] = love.graphics.newQuad(22, 128, 22, 32, w, h)
     quads[3][2] = love.graphics.newQuad(44, 128, 22, 32, w, h)
@@ -70,6 +76,7 @@ function loadTextures()
 
     -- planet core
     textures.core = love.graphics.newImage('images/core.png')
+    textures.core:setFilter('linear', 'nearest')
 end
 
 function game.init()
@@ -122,12 +129,18 @@ function game.init()
               ", length=" .. len)
     end
 
-    -- generate tiles
+    -- generate "map"
     for level = 0, levels do
         tiles[level] = {}
         local count = dimensions[level].count
         for tile = 0, count - 1 do
-            tiles[level][tile] = math.random(0, 2)
+            local t
+            if level == 1 then 
+                t = math.random(0,3) 
+            else 
+                t = math.random(0,2)
+            end
+            tiles[level][tile] = t
         end
     end
 
@@ -196,18 +209,31 @@ function game.tic()
     end
 
     -- horizontal controls
-    local vx = 0
-    if input.left then
-        vx = vx + playerSpeed
+    local a = accel
+    if inTheAir then
+        a = a / 4
     end
-    if input.right then
-        vx = vx - playerSpeed
+    if input.left or input.right then
+        if input.left then
+            vx = vx + 2*a
+        else
+            vx = vx - 2*a
+        end
+    else
+        if vx > 0 then
+            vx = math.max(vx - a, 0)
+        elseif vx < 0 then
+            vx = math.min(vx + a, 0)
+        end
+    end
+    if vx > maxSpeed then
+        vx = maxSpeed
+    elseif vx < -maxSpeed then
+        vx = -maxSpeed
     end
 
-    if vx ~= 0 then
-        playerAngle = playerAngle + vx / playerAlt
-        playerAngle = playerAngle % (2*math.pi)
-    end
+    playerAngle = playerAngle + vx / playerAlt
+    playerAngle = playerAngle % (2*math.pi)
 end
 
 
@@ -224,10 +250,6 @@ function renderPlayer()
 end
 
 function renderPlanet()
-    love.graphics.push()
-    love.graphics.translate(centerX, centerY)
-    love.graphics.rotate(playerAngle)
-
     -- render core
     local w = textures.core:getWidth()
     local h = textures.core:getHeight()
@@ -241,10 +263,12 @@ function renderPlanet()
         local tw = sizes.tw
         local th = sizes.th
         local angleStep = 2*math.pi / count
+        local q = quads[level]
+        local t = tiles[level]
 
         love.graphics.push()
         for i = 0, count-1 do
-            love.graphics.drawq(textures.tiles, quads[level][tiles[level][i]],
+            love.graphics.drawq(textures.tiles, q[t[i]],
                                 math.ceil(-tw/2), -r, 0, 2, 2)
             love.graphics.rotate(-angleStep)
         end
@@ -254,24 +278,23 @@ function renderPlanet()
     for level = 1,levels do
         drawtiles(level)
     end
-
-    love.graphics.pop()
 end
 
 function renderStarfield()
-    love.graphics.push()
-    love.graphics.translate(centerX, centerY)
-    love.graphics.rotate(playerAngle)
     for i = 1, #starField do
         local s = starField[i]
         love.graphics.drawq(textures.stars, quads.stars[s.t], s.x, s.y, s.r, .5, .5)
     end
-    love.graphics.pop()
 end
 
 function game.render()
-    renderStarfield()
-    renderPlanet()
+    love.graphics.push()
+    love.graphics.translate(centerX, centerY)
+    love.graphics.rotate(playerAngle)
+        renderStarfield()
+        renderPlanet()
+    love.graphics.pop()
+
     renderPlayer()
 end
 
