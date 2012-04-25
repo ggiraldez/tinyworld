@@ -13,6 +13,8 @@ local maxSpeed = 2
 local accel = .2
 local vy = 0
 local vx = 0
+local playerFrame = 0
+local playerDir = 1
 
 -- geometry vars
 local atmosphere = 3 * ph
@@ -77,6 +79,26 @@ function loadTextures()
     -- planet core
     textures.core = love.graphics.newImage('images/core.png')
     textures.core:setFilter('linear', 'nearest')
+
+    -- player texture
+    textures.player = love.graphics.newImage('images/player.png')
+    textures.player:setFilter('linear', 'nearest')
+    w = textures.player:getWidth()
+    h = textures.player:getHeight()
+
+    quads.player = {}
+    quads.player[0] = love.graphics.newQuad(0,  0,  16, 16, w, h)
+    quads.player[1] = love.graphics.newQuad(16, 0,  16, 16, w, h)
+    quads.player[2] = love.graphics.newQuad(32, 0,  16, 16, w, h)
+    quads.player[3] = love.graphics.newQuad(48, 0,  16, 16, w, h)
+    quads.player[4] = love.graphics.newQuad(64, 0,  16, 16, w, h)
+    quads.player[5] = love.graphics.newQuad(0,  16, 16, 16, w, h)
+    quads.player[6] = love.graphics.newQuad(16, 16, 16, 16, w, h)
+    quads.player[7] = love.graphics.newQuad(32, 16, 16, 16, w, h)
+    quads.player[8] = love.graphics.newQuad(48, 16, 16, 16, w, h)
+    quads.player[9] = love.graphics.newQuad(64, 16, 16, 16, w, h)
+    quads.player.falling = love.graphics.newQuad(0,  32, 16, 16, w, h)
+    quads.player.jumping = love.graphics.newQuad(16, 32, 16, 16, w, h)
 end
 
 function game.init()
@@ -148,6 +170,7 @@ function game.init()
     playerAngle = 0
     playerAlt = dimensions[0].innerRadius
     playerLevel = 0
+    playerFrame = 0
     inTheAir = false
     vy = 0
 end
@@ -216,8 +239,10 @@ function game.tic()
     if input.left or input.right then
         if input.left then
             vx = vx + 2*a
+            playerDir = -1
         else
             vx = vx - 2*a
+            playerDir = 1
         end
     else
         if vx > 0 then
@@ -234,6 +259,12 @@ function game.tic()
 
     playerAngle = playerAngle + vx / playerAlt
     playerAngle = playerAngle % (2*math.pi)
+
+    if vx == 0 then
+        playerFrame = 0
+    else
+        playerFrame = playerFrame + vx
+    end
 end
 
 
@@ -242,11 +273,33 @@ end
 ---------------------------------------------------------------------------------
 
 function renderPlayer()
-    -- player
+    local q = 0
+    if inTheAir then
+        if vy < -2 then
+            q = 'falling'
+        else
+            q = 'jumping'
+        end
+    else
+        if vx == 0 then
+            q = 0
+        else
+            q = math.floor(playerFrame / 4) % 10
+        end
+    end
+
+    local sx = 2
+    local sy = 2
+    if playerDir < 0 then
+        sx = -sx
+    end
+
     local x = centerX
     local y = centerY - playerAlt 
-    love.graphics.quad('fill', x - pw/2, y - ph, x + pw/2, y - ph,
-                               x + pw/2, y,      x - pw/2, y)
+    love.graphics.drawq(textures.player, quads.player[q],
+                        x - sx/math.abs(sx) * pw/2, y - ph, 0, sx, sy)
+    --love.graphics.quad('line', x - pw/2, y - ph, x + pw/2, y - ph,
+    --                           x + pw/2, y,      x - pw/2, y)
 end
 
 function renderPlanet()
