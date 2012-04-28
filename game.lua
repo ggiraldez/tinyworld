@@ -9,6 +9,7 @@ local ph = 32
 local pw = 32
 local playerAlt
 local inTheAir
+local inTheAirTics = 0
 local playerAngle = 0
 local maxSpeed = 2
 local accel = .2
@@ -162,13 +163,16 @@ function game.tic()
     input.tic()
 
     -- vertical controls
-    if not inTheAir then
+    if not inTheAir or (inTheAirTics < 10 and vy < 0) then
         if input.up then
-            vy = vy + 5.5
+            vy = 5.5
         end
         if vy ~= 0 then
             inTheAir = true
         end
+    end
+    if inTheAir then
+        inTheAirTics = inTheAirTics + 1
     end
 
     -- update player altitude
@@ -237,10 +241,14 @@ function game.tic()
         elseif vx < 0 then
             floor, ceil = findFloorCeil(playerAngle - (pw-16)/playerAlt/2)
         end
-        if math.abs(playerAlt - floor) < 4 and not inTheAir then
-            playerAlt = floor
-        elseif playerAlt > floor then
-            inTheAir = true
+        if not inTheAir then
+            if math.abs(playerAlt - floor) < 4 then
+                playerAlt = floor
+            elseif playerAlt > floor then
+                -- start falling through the hole
+                inTheAir = true
+                inTheAirTics = 0
+            end
         end
         if floor == ceil then
             -- means we hit a wall
