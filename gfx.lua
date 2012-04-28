@@ -10,28 +10,42 @@ local function loadTextures()
     -- load tiles
     textures.tiles = love.graphics.newImage('images/tiles.png')
     textures.tiles:setFilter('linear', 'nearest')
+
+    -- stars
+    textures.stars = love.graphics.newImage('images/stars.png')
+
+    -- planet core
+    textures.core = love.graphics.newImage('images/core.png')
+    textures.core:setFilter('linear', 'nearest')
+
+    -- player texture
+    textures.player = love.graphics.newImage('images/player.png')
+    textures.player:setFilter('linear', 'nearest')
+end
+
+local function createQuads()
+    local w, h
+
+    -- load tiles
     w = textures.tiles:getWidth()
     h = textures.tiles:getHeight()
 
     -- quads for the tiles
-    quads[1] = {}
-    quads[1][0] = love.graphics.newQuad(0,  0, 32, 32,   w, h)
-    quads[1][1] = love.graphics.newQuad(32, 0, 32, 32,   w, h)
-    quads[1][2] = love.graphics.newQuad(64, 0, 32, 32,   w, h)
-    quads[1][3] = love.graphics.newQuad(96, 0, 32, 32,   w, h)
-
-    quads[2] = {}
-    quads[2][0] = love.graphics.newQuad(0,  64, 27, 32,  w, h)
-    quads[2][1] = love.graphics.newQuad(27, 64, 27, 32,  w, h)
-    quads[2][2] = love.graphics.newQuad(54, 64, 27, 32,  w, h)
-
-    quads[3] = {}
-    quads[3][0] = love.graphics.newQuad(0,  128, 22, 32, w, h)
-    quads[3][1] = love.graphics.newQuad(22, 128, 22, 32, w, h)
-    quads[3][2] = love.graphics.newQuad(44, 128, 22, 32, w, h)
+    local widths =  { 38, 32, 28, 24 }
+    local heights = { 32, 32, 32, 32 }
+    local y = 0
+    for level = 0, 3 do
+        local tw = widths[level+1]
+        local th = heights[level+1]
+        quads[level] = { t={}, b={} }
+        for i = 0, 9 do
+            quads[level].t[i] = love.graphics.newQuad(i * tw/2, y,        tw/2, th/2, w, h)
+            quads[level].b[i] = love.graphics.newQuad(i * tw/2, y + th/2, tw/2, th/2, w, h)
+        end
+        y = y + th
+    end
 
     -- stars
-    textures.stars = love.graphics.newImage('images/stars.png')
     w = textures.stars:getWidth()
     h = textures.stars:getHeight()
 
@@ -42,13 +56,7 @@ local function loadTextures()
     quads.stars[2] = love.graphics.newQuad(32, 0, 16, 16, w, h)
     quads.stars[3] = love.graphics.newQuad(48, 0, 16, 16, w, h)
 
-    -- planet core
-    textures.core = love.graphics.newImage('images/core.png')
-    textures.core:setFilter('linear', 'nearest')
-
     -- player texture
-    textures.player = love.graphics.newImage('images/player.png')
-    textures.player:setFilter('linear', 'nearest')
     w = textures.player:getWidth()
     h = textures.player:getHeight()
 
@@ -67,8 +75,12 @@ local function loadTextures()
     quads.player.jumping = love.graphics.newQuad(16, 32, 16, 16, w, h)
 end
 
-
 function gfx.init()
+    loadTextures()
+    createQuads()
+end
+
+function gfx.reload()
     loadTextures()
 end
 

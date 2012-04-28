@@ -40,6 +40,8 @@ function love.keypressed(key, unicode)
         love.timer.step()
     elseif key == "f11" then
         love.graphics.toggleFullscreen()
+    elseif key == "f5" then
+        game.reloadGfx()
     else
         input.keypressed(key, unicode)
     end

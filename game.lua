@@ -54,66 +54,16 @@ local function starfieldInit()
     end
 end
 
-local function tilesInit()
-    -- level 0: atmosphere
-    -- level 1: outer cortex
-    -- level 2: mid cortex
-    -- level 3: inner cortex
-    -- base dimensions (outer cortex tiles are 64x64)
-    -- r1: outer cortex outer radius is the planet radius
-    -- c1: tile count at the outer cortex
-    local th = 64
-    local tw = 64
-    local r1 = radius
-    local c1 = math.ceil(2*math.pi*r1 / tw)
-
-    -- calculate dimensions
-    for level = 0, levels do
-        local count = c1
-        local r = r1 - th * (level - 1)
-        local ir = r - th
-        local len = (2*math.pi*ir)
-        local tw = (2*math.pi*r / count)
-        local twi = (2*math.pi*ir / count)
-        dimensions[level] = { tw = tw,
-                              twi = twi,
-                              th = th, 
-                              count = count, 
-                              outerRadius = r,
-                              innerRadius = ir,
-                              length = len
-                            }
-        print("Level #" .. level .. 
-              ": count=" .. count .. 
-              ", outerRadius=" .. r .. ", innerRadius=" .. ir .. 
-              ", th=" .. th .. ", tw=" .. tw .. ", twi=" .. twi .. 
-              ", length=" .. len)
-    end
-
-    for level = 0, levels do
-        tiles[level] = {}
-        local count = dimensions[level].count
-        for tile = 0, count - 1 do
-            local t
-            if level == 1 then 
-                t = math.random(0,3) 
-            else 
-                t = math.random(0,2)
-            end
-            tiles[level][tile] = t
-        end
-    end
-
-end
-
-
 function game.init()
     gfx.init()
+    
     map.init()
     map.validate()
 
+    dimensions = map.calculateDimensions()
+    tiles = map.generateTiles()
+
     starfieldInit()
-    tilesInit()
 
     -- initial player position
     playerAngle = 0
@@ -124,6 +74,9 @@ function game.init()
     vy = 0
 end
 
+function game.reloadGfx()
+    gfx.reload()
+end
 
 ----------------------------------------------------------------------------------
 -- Auxiliary functions
@@ -270,14 +223,26 @@ function renderPlanet()
 
         love.graphics.push()
         for i = 0, count-1 do
-            love.graphics.drawq(textures.tiles, q[t[i]],
-                                math.ceil(-tw/2), -r, 0, 2, 2)
-            love.graphics.rotate(-angleStep)
+            local base = i * 4
+            if t[base+0] then
+                love.graphics.drawq(textures.tiles, q.t[t[base + 0]], math.ceil(-tw/2), -r, 0, 2, 2)
+            end
+            if t[base+1] then
+                love.graphics.drawq(textures.tiles, q.t[t[base + 1]], 0, -r, 0, 2, 2)
+            end
+            if t[base+2] then
+                love.graphics.drawq(textures.tiles, q.b[t[base + 2]], math.ceil(-tw/2), -r+th/2, 0, 2, 2)
+            end
+            if t[base+3] then
+                love.graphics.drawq(textures.tiles, q.b[t[base + 3]], 0, -r+th/2, 0, 2, 2)
+            end
+
+            love.graphics.rotate(angleStep)
         end
         love.graphics.pop()
     end
 
-    for level = 1,levels do
+    for level = 0,levels do
         drawtiles(level)
     end
 end

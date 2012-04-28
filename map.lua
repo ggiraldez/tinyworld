@@ -2,10 +2,10 @@ local map = {}
 
 -- sample map
 local mapgen = {}
-mapgen[0] = "___ _______ _____ _  ____  ___ __ __ ____"
-mapgen[1] = "..C D...CZZ ZD...U.[]....LJ...U..LZZJ...."
-mapgen[2] = "...U.......N....CZZ__D......O....A......."
-mapgen[3] = "..........C_D...................C_ZD....."
+mapgen[0] = "___ _  ____ _____ _  ____  ___ __ __ ____"
+mapgen[1] = "..C DNN.CZZ ZD...U.[]....LJ...U..LZZJ...."
+mapgen[2] = "...U.UN....N....CZZ__D......O....A......."
+mapgen[3] = "......U...C_D...................C_ZD....."
 
 -- tile connections (map values)
 local mapvalues = {}
@@ -32,6 +32,11 @@ mapvalues['U'] = { c=true,  u=true,  d=false, l=false, r=false }
 mapvalues['A'] = { c=true,  u=false, d=true,  l=false, r=false }
 
 -- the map dimensions and data
+-- Levels:
+-- 0: surface
+-- 1: outer cortex
+-- 2: mid cortex
+-- 3: inner cortex
 local levels = 3
 local tilesPerLevel = 41
 local data = {}
@@ -91,6 +96,91 @@ function map.validate()
     end
     return mapValid
 end
+
+function map.calculateDimensions()
+    local dimensions = {}
+
+    -- base dimensions (outer cortex tiles are 64x64)
+    -- r1: outer cortex outer radius is the planet radius
+    -- c1: tile count at the outer cortex
+    local th = 64
+    local tw = 64
+    local c1 = tilesPerLevel
+    local r1 = (c1*tw) / (2*math.pi)
+
+    -- calculate dimensions
+    for level = 0, levels do
+        local count = c1
+        local r = r1 - th * (level - 1)
+        local ir = r - th
+        local len = (2*math.pi*ir)
+        local tw = (2*math.pi*r / count)
+        local twi = (2*math.pi*ir / count)
+        dimensions[level] = { tw = tw,
+                              twi = twi,
+                              th = th, 
+                              count = count, 
+                              outerRadius = r,
+                              innerRadius = ir,
+                              length = len
+                            }
+        print("Level #" .. level .. 
+              ": count=" .. count .. 
+              ", outerRadius=" .. r .. ", innerRadius=" .. ir .. 
+              ", th=" .. th .. ", tw=" .. tw .. ", twi=" .. twi .. 
+              ", length=" .. len)
+    end
+
+    return dimensions
+end
+
+-- generateTiles builds the tiles arrays, ie. the quad indices for each level
+-- and the given map data. For each map tile 4 tiles are generated, one for
+-- each corner of the map tile. So if the map tile is 64x64, each subtile is 
+-- 32x32 and so on. Tiles level array has 4 times the number of map tiles
+-- because of this.
+function map.generateTiles()
+    local tiles = {}
+
+    for level = 0, levels do
+        tiles[level] = {}
+        for i = 0, tilesPerLevel - 1 do
+            local base = 4 * i
+            local tl, tr, bl, br
+            local m = data[level][i]
+
+            if not m.c then
+                tl = 8
+                tr = 9
+                bl = 8
+                br = 9
+            else
+                if m.u then
+                    if m.l then tl = 7 else tl = 3 end
+                    if m.r then tr = 0 else tr = 4 end
+                else
+                    if m.l then tl = 6 else tl = 5 end
+                    if m.r then tr = 1 else tr = 2 end
+                end
+                if m.d then
+                    if m.l then bl = 7 else bl = 3 end
+                    if m.r then br = 0 else br = 4 end
+                else
+                    if m.l then bl = 1 else bl = 5 end
+                    if m.r then br = 6 else br = 2 end
+                end
+            end
+
+            tiles[level][base + 0] = tl
+            tiles[level][base + 1] = tr
+            tiles[level][base + 2] = bl
+            tiles[level][base + 3] = br
+        end
+    end
+
+    return tiles
+end
+
 
 
 -- export other variables
