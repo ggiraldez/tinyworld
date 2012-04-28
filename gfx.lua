@@ -75,9 +75,62 @@ local function createQuads()
     quads.player.jumping = love.graphics.newQuad(16, 32, 16, 16, w, h)
 end
 
+local function buildHeightMasks()
+    local data = love.image.newImageData('images/tiles.png')
+
+    local function detectEdges(q, top)
+        local r, g, b, a
+        local xq, yq, wq, hq
+        local edges = {}
+        local ye
+        xq, yq, wq, hq = q:getViewport()
+
+        for x = xq, xq+wq-1 do
+            ye = 0
+            for y = yq, yq+hq-1 do
+                r, g, b, a = data:getPixel(x, y)
+                if top then
+                    if a < 128 then
+                        ye = hq-(y-yq)
+                        break
+                    end
+                else
+                    if a > 128 then
+                        ye = hq-(y-yq)
+                        break
+                    end
+                end
+            end
+            edges[x-xq] = ye
+        end
+
+        return edges
+    end
+
+    for level = 0, 3 do
+        quads[level].ht = {}
+        quads[level].hb = {}
+        for i = 0, 9 do
+            local qt, qb
+
+            qt = quads[level].t[i]
+            qb = quads[level].b[i]
+
+            quads[level].ht[i] = detectEdges(qt, true)
+            quads[level].hb[i] = detectEdges(qb, false)
+
+            -- print("Level "..level.." index "..i)
+            -- print(table.concat(quads[level].ht[i], ","))
+            -- print(table.concat(quads[level].hb[i], ","))
+        end
+    end
+end
+
+
 function gfx.init()
     loadTextures()
     createQuads()
+    buildHeightMasks()
 end
 
 function gfx.reload()

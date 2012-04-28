@@ -9,7 +9,6 @@ local ph = 32
 local pw = 32
 local playerAlt
 local inTheAir
-local playerLevel
 local playerAngle = 0
 local maxSpeed = 2
 local accel = .2
@@ -67,10 +66,9 @@ function game.init()
 
     -- initial player position
     playerAngle = 0
-    playerAlt = dimensions[0].innerRadius
-    playerLevel = 0
+    playerAlt = dimensions[0].innerRadius + ph
     playerFrame = 0
-    inTheAir = false
+    inTheAir = true
     vy = 0
 end
 
@@ -82,10 +80,65 @@ end
 -- Auxiliary functions
 ----------------------------------------------------------------------------------
 
-function playerTile()
-    local dims = dimensions[playerLevel]
-    local tileArc = 2*math.pi / dims.count
-    return math.floor((playerAngle + tileArc/2) / tileArc) % dims.count
+local function playerTile(angle)
+    local count = dimensions[0].count
+    local tileArc = 2*math.pi / count
+
+    if not angle then angle = playerAngle end
+    angle = -angle + tileArc/2
+
+    local index = math.floor(angle / tileArc) % count
+    local fraction = (angle % tileArc) / tileArc
+    
+    -- index is [0,count)
+    -- fraction is [0,1]
+    return index, fraction
+end
+
+local function calculateHeights(angle)
+    local i, f = playerTile(angle)
+    local hs = { }
+
+    for level = 0, levels do
+        local et, eb
+        if f < .5 then
+            -- pick tiles on the left
+            local ttl = tiles[level][4*i+0]
+            local btl = tiles[level][4*i+2]
+            local si = math.floor(#(quads[level].ht[ttl]) * 2*f)
+            et = quads[level].ht[ttl][si]
+            eb = quads[level].hb[btl][si]
+        else
+            -- pick tiles on the right
+            local ttr = tiles[level][4*i+1]
+            local btr = tiles[level][4*i+3]
+            local si = math.floor(#(quads[level].ht[ttr]) * 2*(f-0.5))
+            et = quads[level].ht[ttr][si]
+            eb = quads[level].hb[btr][si]
+        end
+
+        -- radiuses
+        local ri = dimensions[level].innerRadius
+        local ro = dimensions[level].outerRadius
+        local rm = (ri+ro)/2
+
+        -- heights for this level
+        local ht, hb
+        ht = rm + 2*et
+        hb = ri + 2*eb
+        if level == 0 then ht = 2*ro end
+
+        if math.abs(ht - hb) > 1 then
+            if level > 0 and math.abs(hs[#hs] - ht) < 2 then
+                hs[#hs] = math.floor(hb)
+            else
+                table.insert(hs, math.ceil(ht))
+                table.insert(hs, math.floor(hb))
+            end
+        end
+    end
+
+    return hs
 end
 
 
@@ -93,19 +146,25 @@ end
 -- Game logic
 ----------------------------------------------------------------------------------
 
+local function findFloorCeil(angle)
+    local hs = calculateHeights(angle)
+    for i = 1, #hs, 2 do
+        if playerAlt + ph - 8 <= hs[i] and playerAlt + 4 >= hs[i+1] then
+            return hs[i+1], hs[i]
+        end
+    end
+    return playerAlt, playerAlt
+end
+
 function game.tic()
+    local floor, ceiling
+
     input.tic()
 
     -- vertical controls
     if not inTheAir then
         if input.up then
             vy = vy + 5.5
-        end
-        if input.down and playerLevel < levels then
-            vy = vy - 2
-        end
-        if vy < 0 then
-            playerLevel = playerLevel + 1
         end
         if vy ~= 0 then
             inTheAir = true
@@ -114,18 +173,21 @@ function game.tic()
 
     -- update player altitude
     if inTheAir then
-        local floor = dimensions[playerLevel].innerRadius
-        local ceiling = dimensions[playerLevel].outerRadius
+        floor, ceil = findFloorCeil(playerAngle)
+        if ceil == floor then ceil = floor + ph end
+
         vy = vy + gravity
         playerAlt = playerAlt + vy
+
         if vy > 0 then
-            -- jumping
-            if playerAlt > ceiling and playerLevel > 0 then
-                playerLevel = playerLevel - 1
+            if playerAlt + ph > ceil then
+                -- we hit the ceiling
+                playerAlt = ceil - ph
+                vy = 0
             end
         else
-            -- falling
             if playerAlt < floor then
+                -- we reached the floor
                 playerAlt = floor
                 vy = 0
                 inTheAir = false
@@ -159,6 +221,7 @@ function game.tic()
         vx = -maxSpeed
     end
 
+    local saveAngle = playerAngle
     playerAngle = playerAngle + vx / playerAlt
     playerAngle = playerAngle % (2*math.pi)
 
@@ -167,6 +230,24 @@ function game.tic()
     else
         playerFrame = playerFrame + vx
     end
+
+    if vx ~= 0 then
+        if vx > 0 then
+            floor, ceil = findFloorCeil(playerAngle + (pw-16)/playerAlt/2)
+        elseif vx < 0 then
+            floor, ceil = findFloorCeil(playerAngle - (pw-16)/playerAlt/2)
+        end
+        if math.abs(playerAlt - floor) < 4 and not inTheAir then
+            playerAlt = floor
+        elseif playerAlt > floor then
+            inTheAir = true
+        end
+        if floor == ceil then
+            -- means we hit a wall
+            vx = 0
+            playerAngle = saveAngle
+        end
+    end
 end
 
 
@@ -174,7 +255,7 @@ end
 -- Render code
 ---------------------------------------------------------------------------------
 
-function renderPlayer()
+local function renderPlayer()
     local q = 0
     if inTheAir then
         if vy < -2 then
@@ -200,11 +281,10 @@ function renderPlayer()
     local y = centerY - playerAlt 
     love.graphics.drawq(textures.player, quads.player[q],
                         x - sx/math.abs(sx) * pw/2, y - ph, 0, sx, sy)
-    --love.graphics.quad('line', x - pw/2, y - ph, x + pw/2, y - ph,
-    --                           x + pw/2, y,      x - pw/2, y)
+
 end
 
-function renderPlanet()
+local function renderPlanet()
     -- render core
     local w = textures.core:getWidth()
     local h = textures.core:getHeight()
@@ -247,11 +327,40 @@ function renderPlanet()
     end
 end
 
-function renderStarfield()
+local function renderStarfield()
     for i = 1, #starField do
         local s = starField[i]
         love.graphics.drawq(textures.stars, quads.stars[s.t], s.x, s.y, s.r, .5, .5)
     end
+end
+
+local function renderDebug()
+    local s = string.format("alt=%d, angle=%.4f, x=%.1f", playerAlt, playerAngle, (playerAngle*playerAlt))
+    love.graphics.print(s, 100, 0)
+    local hs = calculateHeights(playerAngle)
+    love.graphics.print(table.concat(hs, ", "), 500, 0)
+
+    local function drawHeights(angle)
+        local hs = calculateHeights(angle)
+        for i = 1, #hs, 2 do
+            love.graphics.line(0, -hs[i], 0, -hs[i+1])
+        end
+    end
+
+    local r,g,b,a
+    r,g,b,a = love.graphics.getColor()
+    love.graphics.setColor(0,255,255)
+
+    local arc = (pw-8) / playerAlt
+    love.graphics.push()
+    love.graphics.translate(centerX, centerY)
+    love.graphics.rotate(arc/2)
+    drawHeights(playerAngle - arc/2)
+    love.graphics.rotate(-arc)
+    drawHeights(playerAngle + arc/2)
+    love.graphics.pop()
+
+    love.graphics.setColor(r,g,b,a)
 end
 
 function game.render()
@@ -263,6 +372,7 @@ function game.render()
     love.graphics.pop()
 
     renderPlayer()
+    -- renderDebug()
 end
 
 
