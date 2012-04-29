@@ -45,6 +45,12 @@ local function createQuads()
         y = y + th
     end
 
+    -- landscape
+    quads.landscape = {}
+    for i = 0, 7 do
+        quads.landscape[i] = love.graphics.newQuad(i * 38, 160, 38, 32, w, h)
+    end
+
     -- stars
     w = textures.stars:getWidth()
     h = textures.stars:getHeight()

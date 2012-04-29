@@ -181,6 +181,36 @@ function map.generateTiles()
     return tiles
 end
 
+function map.generateLandscape()
+    local tiles = {}
+
+    for i = 0, tilesPerLevel - 1 do
+        tiles[i] = math.random(0, 1)
+    end
+
+    local hills = { {2,3}, {4,5}, {6}, {7} }
+    for j = 1, 8 do
+        local h = hills[math.random(#hills)]
+        local i
+        repeat
+            i = math.random(0, tilesPerLevel - 1)
+            local valid = true
+            for k = 1, #h do
+                if tiles[(i+k-1) % (tilesPerLevel-1)] > 1 then
+                    valid = false
+                    break
+                end
+            end
+        until valid
+
+        for k = 1, #h do
+            tiles[(i+k-1) % (tilesPerLevel-1)] = h[k]
+        end
+    end
+
+    return tiles
+end
+
 
 
 -- export other variables

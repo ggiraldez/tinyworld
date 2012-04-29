@@ -29,6 +29,7 @@ local gravity = -0.2
 local dimensions = {}
 local tiles = {}
 local levels = map.levels
+local landscape = {}
 
 local textures = gfx.textures
 local quads = gfx.quads
@@ -62,6 +63,7 @@ function game.init()
 
     dimensions = map.calculateDimensions()
     tiles = map.generateTiles()
+    landscape = map.generateLandscape()
 
     starfieldInit()
 
@@ -242,8 +244,12 @@ function game.tic()
             floor, ceil = findFloorCeil(playerAngle - (pw-16)/playerAlt/2)
         end
         if not inTheAir then
-            if math.abs(playerAlt - floor) < 4 then
-                playerAlt = floor
+            if floor ~= ceil and math.abs(playerAlt - floor) < 6 then
+                if playerAlt > floor then 
+                    playerAlt = playerAlt - 1
+                else 
+                    playerAlt = playerAlt + 1
+                end
             elseif playerAlt > floor then
                 -- start falling through the hole
                 inTheAir = true
@@ -293,10 +299,32 @@ local function renderPlayer()
 end
 
 local function renderPlanet()
+    -- planet background
+    love.graphics.setColor(36, 28, 44)
+    love.graphics.circle('fill', 0, 0, dimensions[0].innerRadius+2, dimensions[0].count)
+    love.graphics.setColor(255,255,255,255)
+
     -- render core
     local w = textures.core:getWidth()
     local h = textures.core:getHeight()
     love.graphics.draw(textures.core, -w, -h, 0, 2, 2)   
+
+    -- render landscape
+    local function drawLandscape()
+        local sizes = dimensions[0]
+        local count = sizes.count
+        local r = sizes.outerRadius
+        local tw = sizes.tw
+        local th = sizes.th
+        local angleStep = 2*math.pi / count
+
+        love.graphics.push()
+        for i = 0, #landscape do
+            love.graphics.drawq(textures.tiles, quads.landscape[landscape[i]], math.ceil(-tw/2), -r, 0, 2, 2)
+            love.graphics.rotate(angleStep)
+        end
+        love.graphics.pop()
+    end
 
     -- render cortex levels
     function drawtiles(level)
@@ -330,6 +358,7 @@ local function renderPlanet()
         love.graphics.pop()
     end
 
+    drawLandscape()
     for level = 0,levels do
         drawtiles(level)
     end
