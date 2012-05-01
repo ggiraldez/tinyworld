@@ -42,6 +42,10 @@ function love.keypressed(key, unicode)
         love.graphics.toggleFullscreen()
     elseif key == "f5" then
         game.reloadGfx()
+    elseif key == "f2" then
+        game.toggleDebug()
+    elseif key == "f3" then
+        game.restart()
     else
         input.keypressed(key, unicode)
     end

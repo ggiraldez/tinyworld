@@ -2,10 +2,10 @@ local map = {}
 
 -- sample map
 local mapgen = {}
-mapgen[0] = "___ _  ____ _____ _  ____  ___ __ __ ____"
-mapgen[1] = "..C DNN.CZZ ZD...U.[]....LJ...U..LZZJ...."
-mapgen[2] = "...U.UN....N....CZZ__D......O....A......."
-mapgen[3] = "......U...C_D...................C_ZD....."
+mapgen[0] = " __ _  ____ _____ _  ____  ___ __ __  ___"
+mapgen[1] = "J.C DNN.CZZ ZD...U.[]....LJ...U..LZZJL7.F"
+mapgen[2] = "...U.UN....N....CZZ__D......O....A.C7.L^J"
+mapgen[3] = "ZZZZZZJ...C_D...................C_ZZ_ZZ_Z"
 
 -- tile connections (map values)
 local mapvalues = {}

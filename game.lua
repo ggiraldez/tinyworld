@@ -36,6 +36,8 @@ local quads = gfx.quads
 
 local starField = {}
 
+local debug = false
+
 
 ---------------------------------------------------------------------------------
 -- Initialization code
@@ -67,6 +69,14 @@ function game.init()
 
     starfieldInit()
 
+    game.restart()
+end
+
+function game.reloadGfx()
+    gfx.reload()
+end
+
+function game.restart()
     -- initial player position
     playerAngle = 0
     playerAlt = dimensions[0].innerRadius + ph
@@ -75,9 +85,6 @@ function game.init()
     vy = 0
 end
 
-function game.reloadGfx()
-    gfx.reload()
-end
 
 ----------------------------------------------------------------------------------
 -- Auxiliary functions
@@ -204,7 +211,7 @@ function game.tic()
     -- horizontal controls
     local a = accel
     if inTheAir then
-        a = a / 4
+        a = a / 2
     end
     if input.left or input.right then
         if input.left then
@@ -409,7 +416,13 @@ function game.render()
     love.graphics.pop()
 
     renderPlayer()
-    -- renderDebug()
+    if debug then
+        renderDebug()
+    end
+end
+
+function game.toggleDebug()
+    debug = not debug
 end
 
 
