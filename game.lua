@@ -307,7 +307,8 @@ end
 
 local function renderPlanet()
     -- planet background
-    love.graphics.setColor(36, 28, 44)
+    -- love.graphics.setColor(36, 28, 44)
+    love.graphics.setColor(31, 31, 31)
     love.graphics.circle('fill', 0, 0, dimensions[0].innerRadius+2, dimensions[0].count)
     love.graphics.setColor(255,255,255,255)
 
