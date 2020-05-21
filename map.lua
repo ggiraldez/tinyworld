@@ -118,16 +118,16 @@ function map.calculateDimensions()
         local twi = (2*math.pi*ir / count)
         dimensions[level] = { tw = tw,
                               twi = twi,
-                              th = th, 
-                              count = count, 
+                              th = th,
+                              count = count,
                               outerRadius = r,
                               innerRadius = ir,
                               length = len
                             }
-        print("Level #" .. level .. 
-              ": count=" .. count .. 
-              ", outerRadius=" .. r .. ", innerRadius=" .. ir .. 
-              ", th=" .. th .. ", tw=" .. tw .. ", twi=" .. twi .. 
+        print("Level #" .. level ..
+              ": count=" .. count ..
+              ", outerRadius=" .. r .. ", innerRadius=" .. ir ..
+              ", th=" .. th .. ", tw=" .. tw .. ", twi=" .. twi ..
               ", length=" .. len)
     end
 
@@ -136,7 +136,7 @@ end
 
 -- generateTiles builds the tiles arrays, ie. the quad indices for each level
 -- and the given map data. For each map tile 4 tiles are generated, one for
--- each corner of the map tile. So if the map tile is 64x64, each subtile is 
+-- each corner of the map tile. So if the map tile is 64x64, each subtile is
 -- 32x32 and so on. Tiles level array has 4 times the number of map tiles
 -- because of this.
 function map.generateTiles()
@@ -219,4 +219,3 @@ map.levels = levels
 map.tilesPerLevel = tilesPerLevel
 
 return map
-

@@ -1,6 +1,7 @@
 local game = require('game')
 local input = require('input')
 local ticsPerSec = 60
+local fullScreen = false
 local showFPS = true
 
 function love.load()
@@ -39,7 +40,8 @@ function love.keypressed(key, unicode)
         debug.debug()
         love.timer.step()
     elseif key == "f11" then
-        love.graphics.toggleFullscreen()
+      love.window.setFullscreen(not fullScreen)
+      fullScreen = not fullScreen
     elseif key == "f5" then
         game.reloadGfx()
     elseif key == "f2" then

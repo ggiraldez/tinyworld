@@ -96,12 +96,12 @@ local function buildHeightMasks()
             for y = yq, yq+hq-1 do
                 r, g, b, a = data:getPixel(x, y)
                 if top then
-                    if a < 128 then
+                    if a < 0.5 then
                         ye = hq-(y-yq)
                         break
                     end
                 else
-                    if a > 128 then
+                    if a > 0.5 then
                         ye = hq-(y-yq)
                         break
                     end
