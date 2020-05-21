@@ -59,7 +59,7 @@ end
 
 function game.init()
     gfx.init()
-    
+
     map.init()
     map.validate()
 
@@ -99,7 +99,7 @@ local function playerTile(angle)
 
     local index = math.floor(angle / tileArc) % count
     local fraction = (angle % tileArc) / tileArc
-    
+
     -- index is [0,count)
     -- fraction is [0,1]
     return index, fraction
@@ -252,9 +252,9 @@ function game.tic()
         end
         if not inTheAir then
             if floor ~= ceil and math.abs(playerAlt - floor) < 6 then
-                if playerAlt > floor then 
+                if playerAlt > floor then
                     playerAlt = playerAlt - 1
-                else 
+                else
                     playerAlt = playerAlt + 1
                 end
             elseif playerAlt > floor then
@@ -299,23 +299,23 @@ local function renderPlayer()
     end
 
     local x = centerX
-    local y = centerY - playerAlt 
-    love.graphics.drawq(textures.player, quads.player[q],
-                        x - sx/math.abs(sx) * pw/2, y - ph, 0, sx, sy)
+    local y = centerY - playerAlt
+    love.graphics.draw(textures.player, quads.player[q],
+                       x - sx/math.abs(sx) * pw/2, y - ph, 0, sx, sy)
 
 end
 
 local function renderPlanet()
     -- planet background
     -- love.graphics.setColor(36, 28, 44)
-    love.graphics.setColor(31, 31, 31)
+    love.graphics.setColor(0.125, 0.125, 0.125)
     love.graphics.circle('fill', 0, 0, dimensions[0].innerRadius+2, dimensions[0].count)
-    love.graphics.setColor(255,255,255,255)
+    love.graphics.setColor(1,1,1,1)
 
     -- render core
     local w = textures.core:getWidth()
     local h = textures.core:getHeight()
-    love.graphics.draw(textures.core, -w, -h, 0, 2, 2)   
+    love.graphics.draw(textures.core, -w, -h, 0, 2, 2)
 
     -- render landscape
     local function drawLandscape()
@@ -328,7 +328,7 @@ local function renderPlanet()
 
         love.graphics.push()
         for i = 0, #landscape do
-            love.graphics.drawq(textures.tiles, quads.landscape[landscape[i]], math.ceil(-tw/2), -r, 0, 2, 2)
+            love.graphics.draw(textures.tiles, quads.landscape[landscape[i]], math.ceil(-tw/2), -r, 0, 2, 2)
             love.graphics.rotate(angleStep)
         end
         love.graphics.pop()
@@ -349,16 +349,16 @@ local function renderPlanet()
         for i = 0, count-1 do
             local base = i * 4
             if t[base+0] then
-                love.graphics.drawq(textures.tiles, q.t[t[base + 0]], math.ceil(-tw/2), -r, 0, 2, 2)
+                love.graphics.draw(textures.tiles, q.t[t[base + 0]], math.ceil(-tw/2), -r, 0, 2, 2)
             end
             if t[base+1] then
-                love.graphics.drawq(textures.tiles, q.t[t[base + 1]], 0, -r, 0, 2, 2)
+                love.graphics.draw(textures.tiles, q.t[t[base + 1]], 0, -r, 0, 2, 2)
             end
             if t[base+2] then
-                love.graphics.drawq(textures.tiles, q.b[t[base + 2]], math.ceil(-tw/2), -r+th/2, 0, 2, 2)
+                love.graphics.draw(textures.tiles, q.b[t[base + 2]], math.ceil(-tw/2), -r+th/2, 0, 2, 2)
             end
             if t[base+3] then
-                love.graphics.drawq(textures.tiles, q.b[t[base + 3]], 0, -r+th/2, 0, 2, 2)
+                love.graphics.draw(textures.tiles, q.b[t[base + 3]], 0, -r+th/2, 0, 2, 2)
             end
 
             love.graphics.rotate(angleStep)
@@ -375,7 +375,7 @@ end
 local function renderStarfield()
     for i = 1, #starField do
         local s = starField[i]
-        love.graphics.drawq(textures.stars, quads.stars[s.t], s.x, s.y, s.r, .5, .5)
+        love.graphics.draw(textures.stars, quads.stars[s.t], s.x, s.y, s.r, .5, .5)
     end
 end
 
@@ -394,7 +394,7 @@ local function renderDebug()
 
     local r,g,b,a
     r,g,b,a = love.graphics.getColor()
-    love.graphics.setColor(0,255,255)
+    love.graphics.setColor(0,1,1)
 
     local arc = (pw-8) / playerAlt
     love.graphics.push()
@@ -428,4 +428,3 @@ end
 
 
 return game
-
